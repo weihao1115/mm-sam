@@ -36,3 +36,8 @@ Robust and accurate segmentation of scenes has become one core functionality in 
 
 ## Acknowledgement
 We acknowledge the use of the following public resources throughout this work: [Segment Anything Model](https://github.com/facebookresearch/segment-anything), and [LoRA](https://github.com/microsoft/LoRA).
+
+## Related Projects
+Find our other projects for visual foundation models!
+
+[CAT-SAM: Conditional Tuning for Few-Shot Adaptation of Segment Anything Model](https://github.com/weihao1115/cat-sam), ECCV 2024, Oral Paper.
