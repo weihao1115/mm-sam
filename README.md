@@ -2,9 +2,7 @@
 </h1>
 <p align="center">
 
-[//]: # (<a href="https://arxiv.org/abs/2402.03631" target='_blank'>)
-
-[//]: # (    <img src="https://img.shields.io/badge/Arxiv-2402.03631-b31b1b.svg?logo=arXiv">)
+<a href="https://arxiv.org/abs/2408.09085" target='_blank'> <img src="https://img.shields.io/badge/Arxiv-2408.09085-b31b1b.svg?logo=arXiv">
   </a><h5 align="center">
     <em>
         <a href="https://scholar.google.com/citations?user=yGKsEpAAAAAJ&hl=en">Aoran Xiao*</a>,
@@ -23,15 +21,26 @@ Robust and accurate segmentation of scenes has become one core functionality in 
 ## News
 - **(2024/8)** Code will be available soon!
 
+## Method
+![overall_pipeline](./figs/mm_sam.png "overall_pipeline")
 
-[//]: # (## Citation)
 
-[//]: # (If you find this work helpful, please kindly consider citing our paper:)
 
-[//]: # (```bibtex)
 
-[//]: # ()
-[//]: # (```)
+
+
+## Citation
+
+If you find this work helpful, please kindly consider citing our paper:
+
+```bibtex
+@article{mmsam,
+  title={Segment Anything with Multiple Modalities}, 
+  author={Aoran Xiao and Weihao Xuan and Heli Qi and Yun Xing and Naoto Yokoya and Shijian Lu},
+  journal={arXiv preprint arXiv:2408.09085},
+  year={2024}
+}
+```
 
 
 ## Acknowledgement
