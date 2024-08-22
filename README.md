@@ -2,7 +2,8 @@
 </h1>
 <p align="center">
 
-<a href="https://arxiv.org/abs/2408.09085" target='_blank'> <img src="https://img.shields.io/badge/Arxiv-2408.09085-b31b1b.svg?logo=arXiv">
+<a href="https://arxiv.org/abs/2408.09085" target='_blank'>
+    <img src="https://img.shields.io/badge/Arxiv-2408.09085-b31b1b.svg?logo=arXiv">
   </a><h5 align="center">
     <em>
         <a href="https://scholar.google.com/citations?user=yGKsEpAAAAAJ&hl=en">Aoran Xiao*</a>,
@@ -45,6 +46,11 @@ If you find this work helpful, please kindly consider citing our paper:
 
 ## Acknowledgement
 We acknowledge the use of the following public resources throughout this work: [Segment Anything Model](https://github.com/facebookresearch/segment-anything), and [LoRA](https://github.com/microsoft/LoRA).
+
+## Related Projects
+Find our other projects for visual foundation models!
+
+[CAT-SAM: Conditional Tuning for Few-Shot Adaptation of Segment Anything Model](https://github.com/weihao1115/cat-sam), ECCV 2024, Oral Paper.
 
 ## Related Projects
 Find our other projects for visual foundation models!
