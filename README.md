@@ -51,8 +51,3 @@ We acknowledge the use of the following public resources throughout this work: [
 Find our other projects for visual foundation models!
 
 [CAT-SAM: Conditional Tuning for Few-Shot Adaptation of Segment Anything Model](https://github.com/weihao1115/cat-sam), ECCV 2024, Oral Paper.
-
-## Related Projects
-Find our other projects for visual foundation models!
-
-[CAT-SAM: Conditional Tuning for Few-Shot Adaptation of Segment Anything Model](https://github.com/weihao1115/cat-sam), ECCV 2024, Oral Paper.
