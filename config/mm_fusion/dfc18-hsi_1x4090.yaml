@@ -1,0 +1,19 @@
+gpu_num: 1
+train_epoch_num: 50
+
+train_bs: 4
+valid_bs: 4
+test_bs: 1
+
+best_model_selection:
+  - mean_nonzero_fore_iu
+  - max
+
+train_agent: mm_sam.train_agents.mm_fusion.dfc18.DFC18HSIMMFusionSAM
+agent_kwargs:
+  train_transforms: resize_1024
+  valid_transforms: resize_1024
+  test_transforms: resize_1024
+
+  x_encoder_ckpt_path: cm_transfer/dfc18-hsi_1x4090
+  x_lora_rank: 4

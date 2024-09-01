@@ -1,0 +1,17 @@
+gpu_num: 1
+train_epoch_num: 50
+
+train_bs: 2
+valid_bs: 4
+test_bs: 1
+
+best_model_selection:
+  - [ total, mean_nonzero_fore_iu ]
+  - max
+
+train_agent: mm_sam.train_agents.cm_transfer.mfnet.MFNetCMTransferSAM
+agent_kwargs:
+  train_transforms: cmtransfer_v1
+  valid_transforms: resize_1024
+  test_transforms: resize_1024
+  x_lora_rank: 4
