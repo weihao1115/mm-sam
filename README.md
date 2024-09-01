@@ -361,7 +361,7 @@ wmmf_sam.load_x_encoder(f"{EXP_ROOT}/cm_transfer/sunrgbd_1x4090/checkpoints/best
 # if you want to change the weights of the SFG module
 wmmf_sam.load_sfg(f"{EXP_ROOT}/mm_fusion/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth")
 ```
-Above is an example for the WMMF models trained on SunRGBD.
+Above is an example for the WMMF models trained on SUNRGBD.
 Please refer to [our HuggingFace page](https://huggingface.co/collections/weihao1115/mm-sam-66d47ef7cf97d88019d659cc) for more available checkpoints.
 
 ## Citation
