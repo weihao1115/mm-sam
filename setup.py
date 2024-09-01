@@ -14,6 +14,8 @@ install_requires += [
     "torchvision==0.16.2",
     "laspy==2.5.3",
     "spectral==0.23.1",
+    "huggingface-hub==0.24.6",
+    "safetensors==0.4.4",
 ]
 
 setup(

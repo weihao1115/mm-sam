@@ -7,15 +7,17 @@ import torch.nn.functional as F
 
 from torch import nn
 from typing import Tuple, List, Union, Dict, Optional
+from huggingface_hub import PyTorchModelHubMixin
 
 from mm_sam.models.module_lib.sfg import SelectiveFusionGate
 from mm_sam.models.module_lib.x_encoder import XLoraEncoder
-from utilbox.global_config import PRETRAINED_ROOT
-from utilbox.import_utils import import_class
 from mm_sam.models.image_encoders.base import BaseImgEncoderWrapper
 from mm_sam.models.prompt_encoders.base import BasePromptEncodeWrapper
 from mm_sam.models.mask_decoders.base import BaseMaskDecoderWrapper
+
 from utilbox.yaml_utils import load_yaml
+from utilbox.global_config import PRETRAINED_ROOT
+from utilbox.import_utils import import_class
 
 
 class SAMWrapper(nn.Module):
@@ -584,43 +586,39 @@ class SAMWrapper(nn.Module):
         return pred_masks
 
 
-class SAMbyUCMT(SAMWrapper):
-    @classmethod
-    def from_pretrained(cls, x_encoder_ckpt_path: str, x_encoder_config_path: Optional[str] = None):
+class SAMbyUCMT(
+    SAMWrapper, PyTorchModelHubMixin,
+    repo_url="https://github.com/weihao1115/mm-sam", pipeline_tag="mask-generation", license="mit",
+):
+    def __init__(
+            self,
+            model_type: str,
+            x_data_field: str,
+            x_channel_num: int,
+            x_norm_type: Optional[str],
+            x_lora_rank: int = 4,
+            x_encoder_ckpt_path: Optional[str] = None
+    ):
+        super().__init__(model_type=model_type)
+        self.x_data_field = x_data_field
+        x_encoder = XLoraEncoder(
+            x_data_field=x_data_field,
+            x_channel_num=x_channel_num,
+            lora_rank=x_lora_rank,
+            norm_type=x_norm_type,
+            rgb_encoder=self.image_encoder
+        )
+        self.image_encoder = x_encoder
+        if x_encoder_ckpt_path is not None:
+            self.load_x_encoder(x_encoder_ckpt_path)
+
+    def load_x_encoder(self, x_encoder_ckpt_path: str):
         if not x_encoder_ckpt_path.startswith("/"):
             x_encoder_ckpt_path = join(PRETRAINED_ROOT, x_encoder_ckpt_path)
         if not x_encoder_ckpt_path.endswith(".pth"):
             x_encoder_ckpt_path = f"{x_encoder_ckpt_path}.pth"
-
-        if x_encoder_config_path is None:
-            x_encoder_config_path = join(
-                dirname(x_encoder_ckpt_path), basename(x_encoder_ckpt_path).replace('.pth', '.yaml')
-            )
-        if not x_encoder_config_path.startswith("/"):
-            x_encoder_config_path = join(PRETRAINED_ROOT, x_encoder_config_path)
-        if not x_encoder_config_path.endswith(".yaml"):
-            x_encoder_config_path = f"{x_encoder_config_path}.yaml"
-        if not exists(x_encoder_config_path):
-            raise RuntimeError(
-                f"YAML configuration file {x_encoder_config_path} is not found! Cannot build {cls.__class__.__name__} "
-                "directly from your given x_encoder_ckpt_path!"
-            )
-
-        x_encoder_config = load_yaml(x_encoder_config_path)
-        model = cls(model_type=x_encoder_config['sam_model_type'])
-        model.x_data_field = x_encoder_config['x_data_field']
-
-        x_encoder = XLoraEncoder(
-            x_data_field=x_encoder_config['x_data_field'],
-            x_channel_num=x_encoder_config['x_channel_num'],
-            lora_rank=x_encoder_config['x_lora_rank'],
-            norm_type=x_encoder_config['x_norm_type'],
-            rgb_encoder=model.image_encoder
-        )
-        x_encoder_ckpt = torch.load(x_encoder_ckpt_path, map_location='cpu')
-        x_encoder.load_state_dict(x_encoder_ckpt)
-        model.image_encoder = x_encoder
-        return model
+        x_encoder_ckpt = torch.load(x_encoder_ckpt_path, map_location=self.device)
+        self.image_encoder.load_state_dict(x_encoder_ckpt)
 
     def set_infer_img(
             self,
@@ -631,9 +629,6 @@ class SAMbyUCMT(SAMWrapper):
     ):
         if img is None:
             img = data_dict[self.x_data_field]
-        if not hasattr(self.image_encoder, "preprocess"):
-            raise RuntimeError(f"Please build {self.__class__.__name__} by `from_pretrained` method!")
-
         img = self.check_img_type_and_shape(img, channel_last)
         x_images = self.image_encoder.preprocess(img=img)
         # SAM RGB pre-norm is disabled for x-modality images
@@ -641,76 +636,60 @@ class SAMbyUCMT(SAMWrapper):
         super().set_infer_img(img=x_images, channel_last=False, pixel_norm=False)
 
 
-class SAMbyWMMF(SAMWrapper):
-    @classmethod
-    def from_pretrained(
-            cls, x_encoder_ckpt_path: str, sfg_ckpt_path: str,
-            x_encoder_config_path: Optional[str] = None, sfg_config_path: Optional[str] = None
+class SAMbyWMMF(
+    SAMWrapper, PyTorchModelHubMixin,
+    repo_url="https://github.com/weihao1115/mm-sam", pipeline_tag="mask-generation", license="mit",
+):
+    def __init__(
+            self,
+            model_type: str,
+            x_data_field: str,
+            x_channel_num: int,
+            x_norm_type: Optional[str],
+            x_lora_rank: int = 4,
+            x_encoder_ckpt_path: Optional[str] = None,
+            sfg_filter_num: int = 1,
+            sfg_intermediate_channels: int = 32,
+            sfg_filter_type: str = "conv2d",
+            sfg_ckpt_path: Optional[str] = None
     ):
+        super().__init__(model_type=model_type)
+        self.x_data_field = x_data_field
+        x_encoder = XLoraEncoder(
+            x_data_field=x_data_field,
+            x_channel_num=x_channel_num,
+            lora_rank=x_lora_rank,
+            norm_type=x_norm_type,
+            rgb_encoder=self.image_encoder
+        )
+        self.x_encoder = x_encoder
+        if x_encoder_ckpt_path is not None:
+            self.load_x_encoder(x_encoder_ckpt_path)
+
+        fusion_module = SelectiveFusionGate(
+            filter_num=sfg_filter_num,
+            intermediate_channels=sfg_intermediate_channels,
+            filter_type=sfg_filter_type
+        )
+        self.fusion_module = fusion_module
+        if sfg_ckpt_path is not None:
+            self.load_sfg(sfg_ckpt_path)
+
+    def load_x_encoder(self, x_encoder_ckpt_path: str):
         if not x_encoder_ckpt_path.startswith("/"):
             x_encoder_ckpt_path = join(PRETRAINED_ROOT, x_encoder_ckpt_path)
         if not x_encoder_ckpt_path.endswith(".pth"):
             x_encoder_ckpt_path = f"{x_encoder_ckpt_path}.pth"
+        x_encoder_ckpt = torch.load(x_encoder_ckpt_path, map_location=self.device)
+        self.x_encoder.load_state_dict(x_encoder_ckpt)
 
-        if x_encoder_config_path is None:
-            x_encoder_config_path = join(
-                dirname(x_encoder_ckpt_path), basename(x_encoder_ckpt_path).replace('.pth', '.yaml')
-            )
-        if not x_encoder_config_path.startswith("/"):
-            x_encoder_config_path = join(PRETRAINED_ROOT, x_encoder_config_path)
-        if not x_encoder_config_path.endswith(".yaml"):
-            x_encoder_config_path = f"{x_encoder_config_path}.yaml"
-        if not exists(x_encoder_config_path):
-            raise RuntimeError(
-                f"YAML configuration file {x_encoder_config_path} is not found! Cannot build {cls.__class__.__name__} "
-                "directly from your given x_encoder_ckpt_path!"
-            )
-
-        x_encoder_config = load_yaml(x_encoder_config_path)
-        model = cls(model_type=x_encoder_config['sam_model_type'])
-        model.x_data_field = x_encoder_config['x_data_field']
-
-        x_encoder = XLoraEncoder(
-            x_data_field=x_encoder_config['x_data_field'],
-            x_channel_num=x_encoder_config['x_channel_num'],
-            lora_rank=x_encoder_config['x_lora_rank'],
-            norm_type=x_encoder_config['x_norm_type'],
-            rgb_encoder=model.image_encoder
-        )
-        x_encoder_ckpt = torch.load(x_encoder_ckpt_path, map_location='cpu')
-        x_encoder.load_state_dict(x_encoder_ckpt)
-        model.x_encoder = x_encoder
-
+    def load_sfg(self, sfg_ckpt_path: str):
         if not sfg_ckpt_path.startswith("/"):
             sfg_ckpt_path = join(PRETRAINED_ROOT, sfg_ckpt_path)
         if not sfg_ckpt_path.endswith(".pth"):
             sfg_ckpt_path = f"{sfg_ckpt_path}.pth"
-
-        if sfg_config_path is None:
-            sfg_config_path = join(
-                dirname(sfg_ckpt_path), basename(sfg_ckpt_path).replace('.pth', '.yaml')
-            )
-        if not sfg_config_path.startswith("/"):
-            sfg_config_path = join(PRETRAINED_ROOT, sfg_config_path)
-        if not sfg_config_path.endswith(".yaml"):
-            sfg_config_path = f"{sfg_config_path}.yaml"
-        if not exists(sfg_config_path):
-            raise RuntimeError(
-                f"YAML configuration file {sfg_config_path} is not found! Cannot build {cls.__class__.__name__} "
-                "directly from your given sfg_ckpt_path!"
-            )
-
-        sfg_config = load_yaml(sfg_config_path)
-        fusion_module = SelectiveFusionGate(
-            filter_num=sfg_config["filter_num"],
-            intermediate_channels=sfg_config["intermediate_channels"],
-            filter_type=sfg_config["filter_type"]
-        )
-        sfg_ckpt = torch.load(sfg_ckpt_path, map_location='cpu')
-        fusion_module.load_state_dict(sfg_ckpt)
-        model.fusion_module = fusion_module
-
-        return model
+        sfg_ckpt = torch.load(sfg_ckpt_path, map_location=self.device)
+        self.fusion_module.load_state_dict(sfg_ckpt)
 
     def set_infer_img(
             self,
@@ -724,8 +703,6 @@ class SAMbyWMMF(SAMWrapper):
             rgb_img = data_dict["rgb_images"]
         if x_img is None:
             x_img = data_dict[self.x_data_field]
-        if (not hasattr(self, "x_encoder")) or (not hasattr(self, "fusion_module")):
-            raise RuntimeError(f"Please build {self.__class__.__name__} by `from_pretrained` method!")
 
         super().set_infer_img(img=rgb_img, channel_last=channel_last, pixel_norm=pixel_norm)
         rgb_feats = self.img_features

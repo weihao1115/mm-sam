@@ -39,10 +39,8 @@ Robust and accurate segmentation of scenes has become one core functionality in 
 - [Test](#test)
   - [Model Library](#model-library)
 - [Inference](#inference)
-  - [PyTorch-alone](#pytorch-alone)
-    - [UCMT Models](#ucmt-models)
-    - [WMMF Models](#wmmf-models)
-  - [HuggingFace Integration (Coming soon)](#huggingface-integration)
+  - [UCMT Models](#ucmt-models)
+  - [WMMF Models](#wmmf-models)
 - [Citation](#citation)
 - [Acknowledgement](#acknowledgement)
 - [Related Projects](#related-projects)
@@ -263,20 +261,17 @@ You can download them to your local machine and evaluate their performance by ou
 **Note:** we recommend you to download the model checkpoints to `{your PRETRAIN_ROOT}/mmsam_ckpt` for easy management.
 
 ## Inference
-We provide user-friendly API for model inference by either PyTorch-alone APIs and HuggingFace APIs. 
-You can download our checkpoint files along with the corresponding configuration files from [our HuggingFace page](https://huggingface.co/weihao1115/mmsam_ckpt/tree/main).
+We provide user-friendly API for model inference by HuggingFace integration.
 
-### PyTorch-alone
-#### UCMT Models
-Please download **BOTH** `{dataset}_{modality}_encoder_vit_b.pth` and `{dataset}_{modality}_encoder_vit_b.yaml` to `{your PRETRAIN_ROOT}/mmsam_ckpt` from [our HuggingFace page](https://huggingface.co/weihao1115/mmsam_ckpt/tree/main).
-Below is an example to conduct inference of UCMT models on an image sample from SUNRGBD dataset.
+### UCMT Models
+Below is an example to conduct inference of UCMT models on an image sample from SunRGBD dataset.
 ```python
 import torch
 from mm_sam.models.sam import SAMbyUCMT
 from utilbox.global_config import DATA_ROOT
 from utilbox.data_load.read_utils import read_depth_from_disk
 
-ucmt_sam = SAMbyUCMT.from_pretrained(x_encoder_ckpt_path="mmsam_ckpt/sunrgbd_depth_encoder_vit_b")
+ucmt_sam = SAMbyUCMT.from_pretrained("weihao1115/ucmt_sam_on_depth")
 ucmt_sam = ucmt_sam.to("cuda").eval()
 
 # depth_image: (H, W, 1)
@@ -309,32 +304,21 @@ If you want to use your trained checkpoint files to conduct inference, please in
 from mm_sam.models.sam import SAMbyUCMT
 from utilbox.global_config import EXP_ROOT
 
-ucmt_sam = SAMbyUCMT.from_pretrained(
-  x_encoder_ckpt_path=f"{EXP_ROOT}/cm_transfer/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth", 
-  x_encoder_config_path="mmsam_ckpt/sunrgbd_depth_encoder_vit_b"
-)
+ucmt_sam = SAMbyUCMT.from_pretrained("weihao1115/ucmt_sam_on_depth")
+ucmt_sam.load_x_encoder(f"{EXP_ROOT}/cm_transfer/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth")
 ```
-Above is an example for the UCMT models trained on SUNRGBD. Please change the name to your corresponding dataset.
+Above is an example for the UCMT models trained on SunRGBD. 
+Please refer to [our HuggingFace page](https://huggingface.co/collections/weihao1115/mm-sam-66d47ef7cf97d88019d659cc) for more available checkpoints.
 
-#### WMMF Models
-Please download **ALL** 
-- `{dataset}_{modality}_encoder_vit_b.pth`
-- `{dataset}_{modality}_encoder_vit_b.yaml`
-- `{dataset}_{modality}_sfg_vit_b.pth`
-- `{dataset}_{modality}_sfg_vit_b.yaml`
-
-to `{your PRETRAIN_ROOT}/mmsam_ckpt` from [our HuggingFace page](https://huggingface.co/weihao1115/mmsam_ckpt/tree/main).
-Below is an example to conduct inference of WMMF models on an image sample from SUNRGBD dataset.
+### WMMF Models
+Below is an example to conduct inference of WMMF models on an image sample from SunRGBD dataset.
 ```python
 import torch
 from mm_sam.models.sam import SAMbyWMMF
 from utilbox.global_config import DATA_ROOT
 from utilbox.data_load.read_utils import read_image_as_rgb_from_disk, read_depth_from_disk
 
-wmmf_sam = SAMbyWMMF.from_pretrained(
-    x_encoder_ckpt_path="mmsam_ckpt/sunrgbd_depth_encoder_vit_b",
-    sfg_ckpt_path="mmsam_ckpt/sunrgbd_depth_sfg_vit_b",
-)
+wmmf_sam = SAMbyWMMF.from_pretrained("weihao1115/wmmf_sam_on_depth")
 wmmf_sam = wmmf_sam.to("cuda").eval()
 
 # rgb_image: (H, W, 3) 0-255 RGB image
@@ -371,17 +355,14 @@ If you want to use your trained checkpoint files to conduct inference, please in
 from mm_sam.models.sam import SAMbyWMMF
 from utilbox.global_config import EXP_ROOT
 
-wmmf_sam = SAMbyWMMF.from_pretrained(
-  x_encoder_ckpt_path=f"{EXP_ROOT}/cm_transfer/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth", 
-  x_encoder_config_path="mmsam_ckpt/sunrgbd_depth_encoder_vit_b",
-  sfg_ckpt_path=f"{EXP_ROOT}/mm_fusion/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth", 
-  sfg_config_path="mmsam_ckpt/sunrgbd_depth_sfg_vit_b",
-)
+wmmf_sam = SAMbyWMMF.from_pretrained("weihao1115/wmmf_sam_on_depth")
+# if you want to change the weights of the X encoder
+wmmf_sam.load_x_encoder(f"{EXP_ROOT}/cm_transfer/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth")
+# if you want to change the weights of the SFG module
+wmmf_sam.load_sfg(f"{EXP_ROOT}/mm_fusion/sunrgbd_1x4090/checkpoints/best_mean_nonzero_fore_iu_models/your_checkpoint.pth")
 ```
-Above is an example for the WMMF models trained on SUNRGBD. Please change the name to your corresponding dataset.
-
-## HuggingFace Integration
-Coming soon.
+Above is an example for the WMMF models trained on SunRGBD.
+Please refer to [our HuggingFace page](https://huggingface.co/collections/weihao1115/mm-sam-66d47ef7cf97d88019d659cc) for more available checkpoints.
 
 ## Citation
 
